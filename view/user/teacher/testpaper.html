@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <base href="/Examination" />
+    <title></title>
+    <link rel="stylesheet" href="/Examination/assets/elem-ui/node_modules/element-ui/lib/theme-chalk/index.css"/>
+    <script src="/Examination/assets/vue/node_modules/vue/dist/vue.js"></script>
+    <script src="/Examination/assets/elem-ui/node_modules/element-ui/lib/index.js"></script>
+    <script src="/Examination/assets/axios/node_modules/axios/dist/axios.js"></script>
+    <script src="/Examination/js/ajax/api.js"></script>
+    <script src="/Examination/js/record.js"></script>
+</head>
+<style>
+    .card{
+        margin: 20px ;
+        width: 400px;
+        max-height: 650px;
+        border-radius: 15px;
+    }
+    .addpaper{
+        float: right;
+        /*position: relative;*/
+       margin:20px;
+        margin-right: 50px;
+    }
+    .clear{
+        overflow: hidden;
+    }
+</style>
+
+<body>
+<div id="app">
+    <div>
+        <template>
+
+           
+            <el-dialog
+                    title="添加试卷"
+                    :visible.sync="papervisible"
+                    width="800px"
+                    center
+                    :before-close="handleClose">
+                <div>
+                    <el-form  :model="testpaper" class="form" ref="testpaper" :rules="testpaperrules"  label-width="150px">
+                        <el-form-item label="试卷名" prop="testPaperName">
+                            <el-input v-model="testpaper.testPaperName" placeholder="试卷名"></el-input>
+                        </el-form-item>
+                        <el-form-item label="需朗读文章" prop="testArticle">
+                            <el-input :rows="1" type="textarea" v-model="testpaper.testArticle"></el-input>
+                        </el-form-item>
+                        <el-form-item label="关于文章第一个问题" prop="testQuestionOne">
+                            <el-input :rows="1" type="textarea" v-model="testpaper.testQuestionOne"></el-input>
+                        </el-form-item>
+                        <el-form-item label="关于文章第二个问题" prop="testQuestionTow">
+                            <el-input :rows="1" type="textarea" v-model="testpaper.testQuestionTow"></el-input>
+                        </el-form-item>
+                        <el-form-item label="对话题" prop="testSituationalDialogue">
+                            <el-input :rows="1" type="textarea" v-model="testpaper.testSituationalDialogue"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-form-item v-if="testpaper.id==null" class="el-col-lg-push-5" >
+                                <el-button type="primary" @click="submitpaper">提交</el-button>
+                                <el-button @click="resetForm('testpaper')">重置</el-button>
+                            </el-form-item>
+
+                            <el-form-item v-if="testpaper.id!=null" class="el-col-lg-push-5" >
+                                <el-button type="primary" @click="updatePaper">提交</el-button>
+
+                            </el-form-item>
+
+                        </el-form-item>
+
+                    </el-form>
+                </div>
+            </el-dialog>
+            <el-card shadow="always" class="card">
+                <div class="clear">
+                    <el-button class="addpaper" type="primary" @click="addTestPaper"> 添加试卷</el-button>
+                </div>
+
+                <el-table
+                        :data="testpaperdata"
+                        v-loading="loading"
+                        style="width: 1200px;"
+                        max-height="550">
+                    <el-table-column
+                            fixed
+                            prop="testPaperName"
+                            label="试卷名">
+                    </el-table-column>
+                    <el-table-column
+                            fixed="right"
+                            label="操作"
+                            width="200">
+                        <template slot-scope="scope">
+                            <div>
+                                <el-button
+                                        @click.native.prevent="publishRow(scope.row)"
+                                        type="text"
+                                        size="small">
+                                    发布
+                                </el-button>
+                                <el-button
+                                        @click.native.prevent="updateRow(scope.row.id)"
+                                        type="text"
+                                        size="small">
+                                    修改
+                                </el-button>
+                                <el-button
+                                        @click.native.prevent="deleteRow(scope.row.id)"
+                                        type="text"
+                                        size="small">
+                                    删除
+                                </el-button>
+                            </div>
+
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-card>
+        </template>
+        <el-dialog
+                title="发布试卷"
+                :visible.sync="paperpublishvisible"
+                width="500px"
+                center
+                :before-close="handleClose">
+            <el-form  :model="paperpublishinfo" class="form" ref="paperpublishinfo" :rules="paperpublishrules"  label-width="120px">
+                <el-form-item label="试卷名" required>
+                    {{paperpublishinfo.name}}
+                </el-form-item>
+                <el-form-item label="考试时间范围" required>
+                    <el-select  v-model="paperpublishinfo.classID" placeholder="请选择班级" >
+                        <el-option
+                                v-for="item in classdata"
+                                :label="item.classCode"
+                                :value="item.id"
+                        >
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item label="考试时长" required>
+                    <el-input v-model="paperpublishinfo.timeLength"></el-input>
+                </el-form-item>
+
+                <el-form-item label="考试时间范围" required>
+                    <el-col :span="11">
+                        <el-form-item prop="startTime">
+                            <el-date-picker type="datetime" placeholder="选择开始时间" v-model="paperpublishinfo.startTime" style="width: 100%;"></el-date-picker>
+                        </el-form-item>
+                    </el-col>
+                    <el-col class="line" :span="2">-</el-col>
+                    <el-col :span="11">
+                        <el-form-item prop="endTime">
+                            <el-date-picker type="datetime" placeholder="选择结束时间" v-model="paperpublishinfo.endTime" style="width: 100%;"></el-date-picker>
+                        </el-form-item>
+                    </el-col>
+                </el-form-item>
+                <el-form-item>
+                    <el-form-item class="el-col-lg-push-5" >
+                        <el-button type="primary" @click="publishpaper">提交</el-button>
+                    </el-form-item>
+
+
+
+                </el-form-item>
+
+            </el-form>
+        </el-dialog>
+
+    </div>
+</div>
+<script>
+
+    new Vue({
+        el: '#app',
+        data: {
+            classdata:[],
+            papervisible:false,
+            paperpublishvisible:false,
+            loading:true,
+            paperpublishinfo:{
+                classID:null,
+                name:'',
+                startTime:'',
+                endTime:'',
+                testPaperID:null,
+                timeLength:null
+            },
+            paperpublishrules:{
+                "testPaperName":{required: true, message: '该项不可空', trigger: 'blur'},
+                "testPaperName":{required: true, message: '该项不可空', trigger: 'blur'},
+                "testPaperName":{required: true, message: '该项不可空', trigger: 'blur'},
+
+            },
+            testpaper:{
+                id:null,
+                testPaperName:'',
+                testArticle:'',
+                testQuestionOne:'',
+                testQuestionTow:'',
+                testSituationalDialogue:'',
+            },
+            testpaperrules:{
+                "testPaperName":{required: true, message: '该项不可空', trigger: 'blur'},
+                "testArticle":{required: true, message: '该项不可空', trigger: 'blur'},
+                "testQuestionOne":{required: true, message: '该项不可空', trigger: 'blur'},
+                "testQuestionTow":{required: true, message: '该项不可空', trigger: 'blur'},
+                "testSituationalDialogue":{required: true, message: '该项不可空', trigger: 'blur'},
+
+            },
+            testpaperdata:[],
+
+
+        },
+        methods: {
+            publishpaper(){
+                api.post("/ManagerArea/api/Teacher/PaperPublish",this.paperpublishinfo).then(res=>{
+                    console.log(res)
+                    if(res.status){
+                        this.$message.success("发布成功")
+                        this.paperpublishvisible=false;
+                    }else{
+                        this.$message.error('数据添加出错');
+                    }
+                }).catch(res=>{
+                    this.$message.error('服务器出错了，请联系负责人');
+                })
+            },
+            updatePaper(){
+                api.post("/ManagerArea/api/Teacher/EditTestPaper",this.testpaper).then(res=>{
+                    if(res.status){
+                        this.$message.success('修改成功');
+                        this.resetform();
+                        this.loadData()
+                        this.papervisible=false;
+                    }else{
+                        this.$message.error('修改失败，请稍后重试');
+                    }
+                }).catch(res=>{
+                    this.$message.error('服务器出错了，请联系负责人');
+                })
+            },
+            updateRow(id){
+                api.post("/ManagerArea/api/Teacher/QueryTestPaper",{id:id}
+                ).then(res=>{
+                    console.log(res)
+                    if(res.status){
+                        this.testpaper=res.data[0];
+                        this.papervisible=true;
+                    }else{
+                        this.$message.error('数据加载出错');
+                    }
+                }).catch(res=>{
+                    this.$message.error('服务器出错了，请联系负责人');
+                })
+            },
+            deleteRow(id) {
+                console.log(id)
+                api.post("/ManagerArea/api/Teacher/DeleteTestPaper/"+id).then(res=>{
+                    if(res.status){
+                        this.$message.success('删除成功');
+                        this.loadData()
+                    }else{
+                        this.$message.error('删除失败，请稍后重试');
+                    }
+                }).catch(res=>{
+                    this.$message.error('服务器出错了，请联系负责人');
+                })
+            },
+            publishRow(row){
+                console.log(row)
+                this.paperpublishvisible=true
+                this.paperpublishinfo.testPaperID=row.id;
+                this.paperpublishinfo.name=row.testPaperName;
+                api.get("Student/api/Student/GetClass").then(res=>{
+                    if(res.status){
+                        this.classdata=res.data;
+                    }else{
+                        this.$message.error('数据加载出错');
+                    }
+                }).catch(res=>{
+                    this.$message.error('服务器出错了，请联系负责人');
+                })
+            },
+            submitpaper(){
+              api.post("/ManagerArea/api/Teacher/AddTestPaper",this.testpaper).then(res=>{
+                  if(res.status){
+                      this.$message.success('添加成功');
+                      this.resetForm("testpaper");
+                      this.papervisible=false;
+                  }else{
+                      this.$message.error('数据加载出错，请稍后重试');
+                  }
+              }).catch(res=>{
+                  this.$message.error('服务器出错了，请联系负责人');
+              })
+            },
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            },
+            handleClose(done) {
+                this.$confirm('确认关闭？')
+                    .then(_ => {
+                        done();
+                        this.resetform()
+                    })
+                    .catch(_ => {});
+            },
+            addTestPaper(){
+                this.papervisible=true;
+            },
+            loadData(){
+                api.post("/ManagerArea/api/Teacher/QueryTestPaper",{teacherID:JSON.parse(localStorage.getItem("user")).id}
+                ).then(res=>{
+                    console.log(res)
+                    if(res.status){
+                        this.testpaperdata=res.data;
+                        this.loading=false;
+                    }else{
+                        this.$message.error('数据加载出错');
+                    }
+                }).catch(res=>{
+                    this.$message.error('服务器出错了，请联系负责人');
+                })
+            },
+            resetform(){
+                this.testpaper={
+                    id:null,
+                        testPaperName:'',
+                        testArticle:'',
+                        testQuestionOne:'',
+                        testQuestionTow:'',
+                        testSituationalDialogue:'',
+                };
+                this.paperpublishinfo={
+                    classID:null,
+                    startTime:'',
+                    endTime:'',
+                    testPaperID:null,
+                }
+            }
+        },
+        beforeCreate() {
+            //第一个生命周期函数，实例未创建即执行，不能操作data与methods
+
+
+        },
+        created() {
+            //最早能操作data与methods的方法
+            this.loadData();
+
+        },
+        beforeMount() {
+            //页面在内存中编辑完成，js内容尚未渲染到页面
+            console.log("beforeMount");
+        },
+        mounted() {
+            //内存中的模板已经挂载到页面中，页面渲染完成。
+            console.log("mounted");
+        }
+    })
+</script>
+<script>
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="/Examination/assets/elem-ui/node_modules/element-ui/lib/theme-chalk/index.css"/>
+    <script src="/Examination/assets/vue/node_modules/vue/dist/vue.js"></script>
+    <script src="/Examination/assets/elem-ui/node_modules/element-ui/lib/index.js"></script>
+    <script src="/Examination/assets/axios/node_modules/axios/dist/axios.js"></script>
+    <script src="/Examination/js/ajax/api.js"></script>
+    <script src="/Examination/js/record.js"></script>
+</head>
+<style>
+    .card{
+        margin: 50px auto;
+        width: 1250px;
+        max-height: 650px;
+        border-radius: 15px;
+        text-align: center;
+    }
+    .right-float{
+        float: right;
+        margin-right: 50px;
+    }
+</style>
+
+<body>
+<div id="app">
+    <div>
+        <template>
+            <el-card shadow="always" class="card">
+
+                <template>
+                    <el-select  v-model="classid" placeholder="请选择班级" @change="classchange()">
+                        <el-option
+                                v-for="item in classdata"
+                                :label="item.classCode"
+                                :value="item.id"
+                       >
+                        </el-option>
+                    </el-select>
+                </template>
+                <template>
+                    <el-button class="right-float" type="primary" plain @click="addclassvisible=true">添加班级</el-button>
+                </template>
+                <el-dialog
+                        title="提示"
+                        :visible.sync="addclassvisible"
+                        width="420px"
+                        center
+                        class="el-form--inline"
+                        :before-close="handleClose">
+                    <el-form :model="classform" ref="classform" :rules="{
+                        classCode:{required: true, message: '该项不可空', trigger: 'blur'},
+                    }">
+                        <el-form-item label="班级" prop="classCode">
+                            <el-input v-model="classform.classCode" placeholder="请输入班级"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button @click="addclass"> 添加</el-button>
+                        </el-form-item>
+                    </el-form>
+
+                </el-dialog>
+
+
+
+                <el-table
+                    :data="userData"
+                    v-loading="loading"
+                    style="width: 1200px;"
+                    max-height="550">
+                <el-table-column
+                        fixed
+                        prop="userCode"
+                        label="学号">
+                </el-table-column>
+                <el-table-column
+                        prop="userName"
+                        label="姓名">
+                </el-table-column>
+                <el-table-column
+                        prop="sexFlagName"
+                        label="性别">
+                </el-table-column>
+                <el-table-column
+                        prop="majorName"
+                        label="专业">
+                </el-table-column>
+                <el-table-column
+                        prop="classCode"
+                        label="班级"
+                       >
+                </el-table-column>
+
+                <el-table-column
+                        fixed="right"
+                        label="操作"
+                        width="120">
+                    <template slot-scope="scope">
+                        <div>
+                            <el-button
+                                    @click.native.prevent="passRow(scope.row)"
+                                    type="text"
+                                    :disabled="scope.row.checkFlag==1"
+                                    size="small">
+                                通过审核
+                            </el-button>
+                            <br/>
+                            <el-button
+                                    @click.native.prevent="resetpwdRow(scope.row)"
+                                    type="text"
+                                    :disabled="scope.row.checkFlag==0"
+                                    size="small">
+                                重置密码
+                            </el-button>
+                        </div>
+
+                    </template>
+                </el-table-column>
+            </el-table>
+            </el-card>
+        </template>
+
+    </div>
+</div>
+		<script>
+
+			 new Vue({
+			        el: '#app',
+			        data: {
+			            classform:{
+                            classCode:'',
+                            majorID:null,
+                        },  //添加班级表单的班级
+                        addclassvisible:false,
+			            classid:'',
+                        classdata:[],
+			            loading:true,
+                        userData: []
+			        },
+			        methods: {
+                        addclass(){
+                            let user =JSON.parse(localStorage.getItem("user"));
+                            console.log(user.majorID);
+                            this.classform.majorID=user.majorID;
+                            api.post("/ManagerArea/api/Teacher/AddClass",this.classform).then(res=>{
+
+                                if(res.status){
+                                    this.$message.success('添加成功');
+                                    this.loadData();
+                                    classform={
+                                        classCode:'',
+                                            majorID:null,
+                                    }
+                                    this.addclassvisible=false;
+
+                                }else{
+                                    this.$message.error('数据加载出错');
+                                }
+
+                            }).catch(res=>{
+                                this.$message.error('服务器出错了，请联系负责人');
+                            })
+                        },
+                        passRow(rows) {
+                           console.log(rows)
+                            api.post("ManagerArea/api/Teacher/CheckStudent?id="+rows.studentID).then(res=>{
+                                if(res.status){
+                                    this.classchange()
+                                }else{
+                                    this.$message.error('数据加载出错');
+                                }
+
+                            }).catch(res=>{
+                                this.$message.error('服务器出错了，请联系负责人');
+                            })
+                        },
+                        resetpwdRow(){
+                            console.log(index,rows)
+                        },
+                        classchange(){
+                            api.get("Student/api/Student/GetStudent?ClassID="+this.classid).then(res=>{
+                                if(res.status){
+                                    this.userData=res.data;
+                                    this.loading=false;
+                                }else{
+                                    this.$message.error('数据加载出错');
+                                }
+                            }).catch(res=>{
+                                this.$message.error('服务器出错了，请联系负责人');
+                            })
+                        },
+                        handleClose(done) {
+                            this.$confirm('确认关闭？')
+                                .then(_ => {
+                                    done();
+                                })
+                                .catch(_ => {});
+                        },
+                        loadData(){
+                            api.get("Student/api/Student/GetClass").then(res=>{
+                                if(res.status){
+                                    this.classdata=res.data;
+                                }else{
+                                    this.$message.error('数据加载出错');
+                                }
+                            }).catch(res=>{
+                                this.$message.error('服务器出错了，请联系负责人');
+                            })
+                        }
+			        },
+			        beforeCreate() {
+			            //第一个生命周期函数，实例未创建即执行，不能操作data与methods
+
+
+			        },
+			        created() {
+			            //最早能操作data与methods的方法
+                        this.loadData()
+
+
+
+
+			        },
+			        beforeMount() {
+			            //页面在内存中编辑完成，js内容尚未渲染到页面
+			            console.log("beforeMount");
+			        },
+			        mounted() {
+			            //内存中的模板已经挂载到页面中，页面渲染完成。
+			            console.log("mounted");
+			        }
+			    })
+		</script>
+<script>
+
+
+</script>
+</body>
+</html>

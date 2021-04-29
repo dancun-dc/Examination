@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+<!--    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>-->
+    <link href="assets/layui/css/layui.css" rel="stylesheet">
+    <script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+    <link rel="stylesheet" type="text/css" href="css/login.css"/>
+    <script src="js/ajax/api.js"></script>
+
+    <style>
+        *{margin:0;padding:0;list-style-type:none;}
+        body {
+            background-color: #fff;
+            margin: 0px;
+            /*overflow: hidden;*/
+            font-family:arial;
+            color:#fff;
+        }
+
+        #canvas{
+            width:100%;
+            height:100%;
+            overflow: hidden;
+            top:0;
+            left:0;
+            background-color: #1a1724;
+        }
+        .canvas-wrap{ width:100%; height:100%; position:absolute; left:0; top:0;
+
+
+        }
+        label{
+            color: #fff!important;
+        }
+        .mui-input-group {
+            position: relative;
+            padding: 0;
+            border: 0;
+
+        }
+        .mui-text-center{
+            margin: 30px;
+            text-align: center
+        }
+        input{
+            background-color: rgba(0,0,0,0)!important;
+            width: 350px!important;
+            color: #eee!important;
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="canvas-wrap">
+    <div id="canvas" class="gradient"></div>
+</div>
+
+<div id="app" class="mui-input-group" style="">
+    <div class="mui-text-center">
+        欢迎登陆本系统!
+    </div>
+
+    <el-form  label-width="100px" :model="user" ref="user" :rules="userRules">
+        <el-form-item label="学号/工号"  prop="userCode">
+            <el-input v-model="user.userCode"></el-input>
+        </el-form-item>
+        <el-form-item label="姓名" prop="userName">
+            <el-input v-model="user.userName"  ></el-input>
+        </el-form-item>
+        <el-form-item label="性别" prop="sexFlag">
+            <el-select v-model="user.sexFlag" placeholder="请选择性别"  >
+                <el-option label="男" value=1></el-option>
+                <el-option label="女" value=0></el-option>
+            </el-select>
+
+        </el-form-item>
+        <el-form-item label="专业" prop="majorID">
+            <el-select v-model="user.majorID" placeholder="请选择专业" @change="majorchange()"  >
+                <template v-for="(item,i) in major">
+                    <el-option :label="item.rowName" :value="item.rowID"></el-option>
+                </template>
+
+            </el-select>
+
+        </el-form-item>
+        <el-form-item label="班级"  prop="classCode">
+            <el-select v-model="user.classID" placeholder="请选择专业"  >
+                <template v-for="(item,i) in classdata">
+                    <el-option :label="item.classCode" :value="item.id"></el-option>
+                </template>
+
+            </el-select>
+
+        </el-form-item>
+        <el-form-item label="身份" prop="userType">
+            <el-select v-model="user.userType" placeholder="请选学生身份"  >
+                <el-option label="学生" value=0></el-option>
+                <el-option label="老师" value=0></el-option>
+            </el-select>
+
+        </el-form-item>
+        <el-form-item label="密码"  prop="userPwd">
+            <el-input type="password" v-model="user.userPwd" ></el-input>
+        </el-form-item>
+        <el-form-item >
+            <el-form-item class="el-col-lg-push-4 ">
+                <el-button type="primary" @click="submitForm()" >注册</el-button>
+                <el-button @click="resetForm('user')">重置</el-button>
+            </el-form-item>
+        </el-form-item><br/>    </el-form>
+</div>
+
+<script type="text/javascript" src="js/login.js" ></script>
+</body>
+<script src="js/three.min.js"></script>
+<script src="js/projector.js"></script>
+<script src="js/canvas-renderer.js"></script>
+<script src="js/3d-lines-animation.js"></script>
+<script src="js/jquery.1.7.1.min.js" type="text/javascript"></script>
+<script src="js/color.js"></script>
+<script src="./assets/vue/node_modules/vue/dist/vue.js"></script>
+<link rel="stylesheet" href="./assets/elem-ui/node_modules/element-ui/lib/theme-chalk/index.css"/>
+<script src="./assets/elem-ui/node_modules/element-ui/lib/index.js"></script>
+<script src="./assets/axios/node_modules/axios/dist/axios.js"></script>
+
+
+    		<script>
+
+    			 new Vue({
+    			        el: '#app',
+    			        data: {
+    			           user:{
+                               "userCode": '',
+                               "userPwd": '',
+                               "userType": null,
+                               "userName": '',
+                               "sexFlag": null,
+                               "majorID": '',
+                               "classID": '',
+                           },
+                            userRules:{
+                                "userCode":{required: true, message: '请输入学号', trigger: 'blur'},
+                                "sexPwd":  {required: true, message: '请输入密码', trigger: 'blur'},
+                                "userType":{required: true, message: '请输入用户类型', trigger: 'blur'},
+                                "userName":{required: true, message: '请输入用户名', trigger: 'blur'},
+                                "sexFlag": {required: true, message: '请输入性别', trigger: 'blur'},
+                                "majorID": {required: true, message: '请选择专业', trigger: 'blur'},
+                                "classID": {required: true, message: '请选择班级', trigger: 'blur'},
+                            },
+                           major:[],
+                            classdata:[],
+
+    			        },
+    			        methods: {
+                            submitForm(){
+                                this.user.userType=Number(this.user.userType);
+                                this.user.sexFlag=Number(this.user.sexFlag);
+                              api.post("Student/api/Student/AddStudent",this.user).then(res=>{
+                                  if(res.status){
+                                      this.$alert('请等待教师审核', '注册成功', {
+                                          confirmButtonText: '确定',
+                                          callback: action => {
+                                              window.location.href("./login。html")
+                                          }
+                                      });
+                                  }else{
+                                      this.$message.error('注册失败，请重新注册或联系老师');
+                                  }
+                              }).catch(res=>{
+                                  this.$message.error('服务器错误');
+                              })
+                            },
+                            majorchange(){
+                                api.get("Student/api/Student/GetClass?ID="+this.user.majorID).then(res=>{
+                                    if(res.status){
+                                        this.classdata=res.data;
+                                    }
+                                }).catch(res=>{
+                                    this.$message.error('服务器错误');
+                                })
+                            },
+                            resetForm(formName) {
+                                this.$refs["user"].resetFields();
+                            }
+
+    			        },
+    			        beforeCreate() {
+    			            //第一个生命周期函数，实例未创建即执行，不能操作data与methods
+
+
+    			        },
+    			        created() {
+    			            //最早能操作data与methods的方法
+                            api.get("Dic/api/Dic/GetMajorData").then(res=>{
+                                if(res.status){
+                                    this.major=res.data;
+                                    console.log( this.major)
+                                }
+                            }).catch(res=>{
+
+                                    this.$message.error('服务器错误');
+
+                            })
+
+    			        },
+    			        beforeMount() {
+    			            //页面在内存中编辑完成，js内容尚未渲染到页面
+    			            console.log("beforeMount");
+    			        },
+    			        mounted() {
+                            //内存中的模板已经挂载到页面中，页面渲染完成。
+                            console.log("mounted");
+                        }
+
+    			    })
+    		</script>
+
+</body>
+</html>

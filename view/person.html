@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="../assets/elem-ui/node_modules/element-ui/lib/theme-chalk/index.css"/>
+    <script src="../assets/vue/node_modules/vue/dist/vue.js"></script>
+    <script src="../assets/elem-ui/node_modules/element-ui/lib/index.js"></script>
+    <script src="../assets/axios/node_modules/axios/dist/axios.js"></script>
+    <script src="../js/ajax/api.js"></script>
+    <script src="../js/record.js"></script>
+</head>
+<style>
+    .card {
+        margin: 100px auto;
+        width: 700px;
+        height: 500px;
+        border-radius: 20px;
+    }
+
+    .title {
+        font-size: 40px;
+        font-weight: bolder;
+        font-style: italic;
+        text-align: center;
+        color: #4f504f;
+        margin-top: 30px;
+
+    }
+    .card div p{
+        margin-top: 30px;
+        font-size: 25px;
+        margin-left: 250px;
+
+    }
+    .card div p:first-child{
+        margin-top: 70px;
+    }
+
+</style>
+
+<body>
+<div id="app">
+    <el-card class="box-card card">
+        <div class="title">欢迎使用考试系统</div>
+        <div>
+            <p>姓名 ： {{userinfo.userName}}</p>
+            <p>{{userinfo.userType==1?'教工号':'学号'}} ： {{userinfo.userCode}}</p>
+            <p>专业 ： {{userinfo.majorName}}</p>
+            <p>角色 ： {{userinfo.userType==1?'教师':'学生'}}</p>
+            <p>性别：{{userinfo.sexFlag==0?'女':'男'}}</p>
+        </div>
+
+    </el-card>
+</div>
+<script>
+
+    new Vue({
+        el: '#app',
+        data: {
+            userinfo: {}
+
+        },
+        methods: {},
+        beforeCreate() {
+            //第一个生命周期函数，实例未创建即执行，不能操作data与methods
+
+
+        },
+        created() {
+            //最早能操作data与methods的方法
+            api.get("User/api/User/UserInfo").then(res => {
+                // console.log(res)
+                if (res.status) {
+                    this.userinfo=res.data[0];
+                    // console.log("data",this.userinfo)
+                } else {
+                    // window.location.href="./login.html"
+                }
+            })
+
+        },
+        beforeMount() {
+            //页面在内存中编辑完成，js内容尚未渲染到页面
+            // console.log("beforeMount");
+        }
+        ,
+        mounted() {
+            //内存中的模板已经挂载到页面中，页面渲染完成。
+            // console.log("mounted");
+        }
+    })
+</script>
+
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="/Examination/assets/elem-ui/node_modules/element-ui/lib/theme-chalk/index.css"/>
+    <script src="/Examination/assets/vue/node_modules/vue/dist/vue.js"></script>
+    <script src="/Examination/assets/elem-ui/node_modules/element-ui/lib/index.js"></script>
+    <script src="/Examination/assets/axios/node_modules/axios/dist/axios.js"></script>
+    <script src="/Examination/js/ajax/api.js"></script>
+    <script src="/Examination/js/record.js"></script>
+
+
+<body>
+<style>
+    .card {
+        margin: 100px auto;
+        width: 500px;
+        height: 500px;
+        border-radius: 20px;
+    }
+</style>
+<div id="app">
+    <el-card class="box-card card">
+        <el-form label-width="100px" :model="user" ref="user" :rules="userRules">
+            <el-form-item label="学号">
+                <el-input readonly v-model="user.userCode"></el-input>
+            </el-form-item>
+            <el-form-item label="姓名" prop="userName">
+                <el-input v-model="user.userName"></el-input>
+            </el-form-item>
+            <el-form-item label="性别">
+                <el-input readonly :value="user.sexFlag==1?'男':'女'"></el-input>
+
+            </el-form-item>
+            <el-form-item label="专业" >
+                <el-input readonly v-model="user.majorName"></el-input>
+
+            </el-form-item>
+            <el-form-item label="班级" >
+                <el-input readonly v-model="user.classCode"></el-input>
+
+            </el-form-item>
+            <el-form-item label="身份" >
+                <el-input readonly value="学生"></el-input>
+
+            </el-form-item>
+            <el-form-item label="密码" prop="userPwd">
+                <el-input type="password" v-model="user.userPwd"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-form-item class="el-col-lg-push-4 ">
+                    <el-button type="primary" @click="submitForm()">修改</el-button>
+                    <el-button @click="resetForm('user')">重置</el-button>
+                </el-form-item>
+            </el-form-item>
+            <br/></el-form>
+    </el-card>
+</div>
+<script>
+
+    new Vue({
+        el: '#app',
+        data: {
+            user:{
+                "userCode": '',
+                "userPwd": '',
+                "userType": null,
+                "userName": '',
+                "sexFlag": null,
+                "majorName": '',
+                "classCode": '',
+
+            },
+            userRules:{
+                "userName":{required: true, message: '请输入用户名', trigger: 'blur'},
+                "userPwd": {required: true, message: '请选择班级', trigger: 'blur'},
+            },
+
+        },
+        methods: {
+            submitForm(){
+                if(this.user.userName==null||this.user.userName==''){
+                    this.$message.warning("请填写姓名");
+                    return;
+                }if(this.user.userPwd==null||this.user.userPwd==''){
+                    this.$message.warning("请填写密码");
+                    return;
+                }
+                api.post("/User/api/User/UpdateUserInfo",{userName:this.user.userName,userPwd:this.user.userPwd}).then(res=>{
+                    if(res.status){
+                       this.$message.success("修改成功");
+                       setTimeout(location.href="../../person.html",2000)
+                    }else{
+                        this.$message.error('修改失败，请重新修改或联系老师');
+                    }
+                }).catch(res=>{
+                    this.$message.error('服务器错误');
+                })
+            },
+            resetForm(formName) {
+                this.$refs["user"].resetFields();
+            }
+        },
+        beforeCreate() {
+            //第一个生命周期函数，实例未创建即执行，不能操作data与methods
+
+
+        },
+        created() {
+            //最早能操作data与methods的方法
+            api.get("/User/api/User/UserInfo").then(res=>{
+                if(res.status){
+                    this.user=res.data[0];
+                }else{
+                    this.$message.error("数据加载失败")
+                }
+            }).catch(res=>{
+                this.$message.error("服务器错误，请联系管理员")
+            })
+
+        },
+        beforeMount() {
+            //页面在内存中编辑完成，js内容尚未渲染到页面
+            console.log("beforeMount");
+        },
+        mounted() {
+            //内存中的模板已经挂载到页面中，页面渲染完成。
+            console.log("mounted");
+        }
+    })
+</script>
+
+</body>
+</html>

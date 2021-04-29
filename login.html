@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+    <link href="assets/layui/css/layui.css" rel="stylesheet">
+    <script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+    <link rel="stylesheet" type="text/css" href="css/login.css"/>
+    <script src="js/ajax/api.js"></script>
+    <script src="assets/layui/layui.js"></script>
+
+    <style>
+        *{margin:0;padding:0;list-style-type:none;}
+        body {
+            background-color: #fff;
+            margin: 0px;
+            /*overflow: hidden;*/
+            font-family:arial;
+            color:#fff;
+        }
+
+        #canvas{
+            width:100%;
+            height:100%;
+            overflow: hidden;
+            top:0;
+            left:0;
+            background-color: #1a1724;
+        }
+        .canvas-wrap{ width:100%; height:100%; position:absolute; left:0; top:0;
+
+
+        }
+        div.canvas-content{
+            position:relative;
+            z-index:2000;
+            color:#fff;
+            text-align:center;
+            padding-top:30px;
+        }
+        .center{
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="canvas-wrap">
+    <div id="canvas" class="gradient"></div>
+</div>
+
+<form class="mui-input-group" style="">
+    <div class="mui-text-center">
+        欢迎登陆本系统!
+    </div>
+
+    <div class="mui-input-row">
+        <label>账号：</label>
+        <input id="username" type="text" class="styled-input__input" name="nickname" placeholder="请输入账号">
+    </div>
+    <div class="mui-input-row">
+        <label>密码：</label>
+        <input id="userpwd" type="password" class="styled-input__input" placeholder="请输入密码">
+    </div>
+    <div class="mui-input-row">
+        <label>身份：</label>
+        <select id="type" class="layui-select" placeholder="请输入密码">
+            <option value=0 selected> 学生</option>
+            <option value=1> 教师</option>
+        </select>
+    </div>
+
+    <button type="button" class="mui-btn-block" id="submit" >登录</button>
+    <div class="myfooter register"><p>注册</p><p> </p></div><br/>
+</form>
+
+<script type="text/javascript" src="js/login.js" ></script>
+</body>
+<script src="js/three.min.js"></script>
+<script src="js/projector.js"></script>
+<script src="js/canvas-renderer.js"></script>
+<script src="js/3d-lines-animation.js"></script>
+<script src="js/jquery.1.7.1.min.js" type="text/javascript"></script>
+<script src="assets/layui/layui.js"></script>
+<script src="js/color.js"></script>
+
+<script>
+    var UserName = $("#username");
+    //2.保存密码框对象
+    var UserPwd = $("#userpwd");
+    var type =$("#type")
+    //3.保存按钮对象
+    var Login = $("#submit");
+    //4.监听提交事件事件
+    Login.click(function () {
+        if (UserName.val() != "") {
+            //用户名不为空密码不为空
+            if (UserPwd.val() != "" && UserPwd.val().length >= 6) {
+                //密码不为空切长队大于六
+                //ajax请求登录
+
+                data= { "userType": Number(type.val()) , "UserCode": UserName.val(), "UserPwd": UserPwd.val() };
+                api.post("User/api/User/Login",data).then(res=>{
+                    if (res.status) {
+                        layer.msg('登录成功');
+                        localStorage.setItem("Authorization","bearer "+res.data)
+                        console.log(data.userType)
+                        if(data.userType==1){
+                            location.href = './index.html';//教师
+                        }else{
+                            location.href = './main.html';//学生
+                        }
+
+                    } else  {
+                        layer.msg('登录失败用户名或者密码错误');
+                        UserName.val("");
+                        UserPwd.val("");
+                        // lodeCode();
+
+                    }
+                }).catch(res=>{
+                    layer.msg('服务器异常', );
+                    UserName.val("");
+                    UserPwd.val("");
+                    // lodeCode();
+                })
+            } else {
+                if (UserPwd.val() == "") {
+
+                    layer.msg('密码能为空');
+                } else {
+                    layer.msg('密码长度不能小于6');
+                }
+
+            }
+        } else {
+            //提示用户
+            layer.msg('用户名不能为空');
+        }
+
+    });
+    $(".register").click(function () {
+        location.href="./register.html"
+    })
+</script>
+</html>

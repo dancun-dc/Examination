@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<link rel="stylesheet" href="/Examination/assets/elem-ui/node_modules/element-ui/lib/theme-chalk/index.css"/>
+		<script src="/Examination/assets/vue/node_modules/vue/dist/vue.js"></script>
+		<script src="/Examination/assets/elem-ui/node_modules/element-ui/lib/index.js"></script>
+		<script src="/Examination/assets/axios/node_modules/axios/dist/axios.js"></script>
+		<script src="/Examination/js/ajax/api.js"></script>
+		<script src="/Examination/js/jquery-3.4.1.js"></script>
+	</head>
+	<style>
+		.card{
+			margin: 50px auto;
+			width: 950px;
+			max-height: 650px;
+			border-radius: 15px;
+			text-align: center;
+		}
+	</style>
+	
+	<body>
+		<div id="app">
+			<el-card shadow="always" class="card">
+				<div class="select-blod">
+					<span>请选择班级</span>
+					<el-select v-model="classId" @change="change" filterable placeholder="请选择">
+						<el-option
+								v-for="item in classData"
+								:key="item.id"
+								:label="item.classCode"
+								:value="item.id">
+						</el-option>
+					</el-select>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					<span>请选择试卷</span>
+					<el-select v-model="paperId" @change="change" filterable placeholder="请选择">
+						<el-option
+								v-for="item in paperData"
+								:key="item.id"
+								:label="item.testPaperName"
+								:value="item.id">
+						</el-option>
+					</el-select>
+					<br/><br/>
+					<span>&nbsp;&nbsp;&nbsp;阅卷状态</span>
+					<el-select v-model="testFlag" @change="change" filterable placeholder="请选择">
+						<el-option
+								label="已阅卷"
+								:value="1">
+						</el-option>
+						<el-option
+								label="待阅卷"
+								:value="0">
+						</el-option>
+					</el-select>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					<span>提交状态</span>
+					<el-select v-model="testFinishFlag" @change="change" filterable placeholder="请选择">
+						<el-option
+								label="已作答"
+								:value="1">
+						</el-option>
+						<el-option
+								label="未作答"
+								:value="0">
+						</el-option>
+					</el-select>
+				</div>
+				<el-table
+						:data="answerData"
+						style="width: 1200px;"
+						max-height="550">
+					<el-table-column
+							fixed
+							prop="testPaperName"
+							label="试卷名">
+					</el-table-column>
+
+					<el-table-column
+							fixed
+							prop="userName"
+							label="姓名">
+					</el-table-column>
+
+					<el-table-column
+							fixed="right"
+							label="操作"
+							width="200">
+						<template slot-scope="scope">
+							<div>
+								<el-button
+										@click.native.prevent="checkRow(scope.row)"
+										type="text"
+										size="small">
+									阅卷
+								</el-button>
+
+							</div>
+
+						</template>
+					</el-table-column>
+				</el-table>
+			</el-card>
+			<el-dialog
+					title="提示"
+					:visible.sync="dialogVisible"
+					width="700px"
+					:before-close="handleClose">
+				<audio controls autoplay style="display: none"></audio>
+				<el-form  label-width="80px" :model="answerInfo">
+					<el-form-item label="第一题：">
+						{{answerInfo.answerOne}}
+					</el-form-item>
+					<el-form-item label="评分">
+						<el-rate
+								v-model="answerInfo.answerOneGrade"
+								style="padding-top: 13px;height: 40px;"
+								show-text>
+						</el-rate>
+
+<!--						<el-input v-model="answerInfo.answerOneGrade"></el-input>-->
+					</el-form-item>
+					<el-form-item label="第二题：">
+						{{answerInfo.answerOne}}
+					</el-form-item>
+					<el-form-item label="评分">
+						<el-rate
+								v-model="answerInfo.answerTowGrade"
+								style="padding-top: 13px;height: 40px;"
+								show-text>
+						</el-rate>
+
+					</el-form-item>
+					<el-form-item label="阅读题：">
+
+							<el-button icon="el-icon-video-play" round @click="playRecording(answerInfo.readAirtcleUrl)" type="button" value="">播放</el-button>
+							<el-button icon="el-icon-video-pause " round @click="stopRecording()" type="button" value="停止">停止</el-button>
+
+					</el-form-item>
+					<el-form-item label="评分">
+						<el-rate
+								v-model="answerInfo.readAirtcleGrade"
+								style="padding-top: 13px;height: 40px;"
+								show-text>
+						</el-rate>
+
+					</el-form-item>
+					<el-form-item label="对话题：">
+
+							<el-button icon="el-icon-video-play" round @click="playRecording(answerInfo.dialogueUrl)" type="button" value="">播放</el-button>
+							<el-button icon="el-icon-video-pause " round @click="stopRecording()" type="button" value="停止">停止</el-button>
+
+					</el-form-item>
+					<el-form-item label="评分">
+						<el-rate
+								v-model="answerInfo.dialogueGrade"
+								style="padding-top: 13px;height: 40px;"
+								show-text>
+						</el-rate>
+
+					</el-form-item>
+
+					<el-form-item label="">
+						<el-form-item >
+							<el-button style="margin-left: 200px;float: none" class="el-col-lg-push-14" icon="el-icon-video-play" round @click="submit" type="button" value="">提交</el-button>
+						</el-form-item>
+					</el-form-item>
+				</el-form>
+
+			</el-dialog>
+
+		</div>
+		<script>
+
+			 new Vue({
+			        el: '#app',
+			        data: {
+						testFinishFlag:1,
+			        	testFlag:0,
+						dialogVisible:false,
+			        	classId:null,
+						paperId:null,
+			            classData: [],
+			            paperData: [],
+						answerData:[],
+						answerInfo:{
+							"studentID":null,
+							"testPaperID":null,
+							"testPaperName":"",
+							"readAirtcleUrl":"",
+							"answerOne":"",
+							"answerTow":"",
+							"dialogueUrl":"",
+							"dialogueGrade":"",
+							"answerTowGrade":"",
+							"answerOneGrade":null,
+							"readAirtcleGrade":null,
+							"testFlag":null,
+							"testFinishFlag":null,
+							"userName":"",
+							"timeLength":null,
+							"id":null
+						},
+						userInfo:{
+							studentID:null,
+							userCode:"",
+							userPwd:null,
+							userType:null,
+							userName:"",
+							sexFlag:null,
+							userID:null,
+							checkFlag:null,
+							majorID:null,
+							majorName:"",
+							classID:null,
+							sexFlagName:null,
+							classCode:null,
+							id:null,
+						},
+
+			        },
+			        methods: {
+			        	submit(){
+			        		api.post("/ManagerArea/api/Teacher/CheckAnswer", {
+			        			id:this.answerInfo.id
+								,dialogueGrade:this.answerInfo.dialogueGrade
+								,readAirtcleGrade:this.answerInfo.readAirtcleGrade
+								,answerTowGrade:this.answerInfo.answerTowGrade,
+								answerOneGrade:this.answerInfo.answerOneGrade}).then(res=>{
+
+									if(res.status){
+										this.$message.success("评分成功")
+										this.dialogVisible=false;
+										location.reload();
+										console.log(res)
+									}else{
+										this.$message.error('初始化失败，请重联系老师或管理员');
+									}
+								}).catch(res=>{
+									this.$message.error('服务器错误');
+								})
+						},
+			        	playRecording(param) {
+			        		api.postFile("/ManagerArea/api/Teacher/GetFile","\""+param.replaceAll("\\","\\\\")+"\"").then(res=>{
+								console.log(res)
+			        			// let blob = new Blob(res)
+								let audio =$("audio");
+								// console.log(blob)
+								audio.attr("src",window.URL.createObjectURL(res))
+								// window.URL.createObjectURL(res)
+							}).catch(res=>{
+								this.$message.error('服务器错误');
+							})
+
+						},
+						stopRecording() {
+							let audio =$("audio").get(0);
+							if( !audio.paused) {
+								audio.pause();
+							}
+						},
+						handleClose(done) {
+							this.$confirm('确认关闭？')
+									.then(_ => {
+										done();
+									})
+									.catch(_ => {});
+						},
+						checkRow(row){
+							// console.log(row)
+							this.answerInfo=row;
+							this.dialogVisible=true;
+						},
+						change(){
+							api.post("/ManagerArea/api/Teacher/GetAnswer",{
+								classID:this.classId,
+								testPaperID:this.paperId,
+								id: null,testFlag:Number(this.testFlag),
+								testFinishFlag:Number(this.testFinishFlag)}).then(res=>{
+
+								if(res.status){
+									this.answerData=res.data;
+									console.log(res)
+								}else{
+									this.$message.error('初始化失败，请重联系老师或管理员');
+								}
+							}).catch(res=>{
+								this.$message.error('服务器错误');
+							})
+						}
+			        },
+			        beforeCreate() {
+			            //第一个生命周期函数，实例未创建即执行，不能操作data与methods
+
+
+			        },
+			        created() {
+			            //最早能操作data与methods的方法
+						this.userInfo=JSON.parse(localStorage.getItem("user"))
+						console.log(this.userInfo.classID)
+						api.get("/Student/api/Student/GetClass?Id="+this.userInfo.majorID).then(res=>{
+							if(res.status){
+								res.data.push({"classCode":"不限",id:null})
+								this.classData=res.data;
+							}else{
+								this.$message.error('初始化失败，请重联系老师或管理员');
+							}
+						}).catch(res=>{
+							this.$message.error('服务器错误');
+						})
+						api.post("/ManagerArea/api/Teacher/QueryTestPaper",{teacherID:JSON.parse(localStorage.getItem("user")).id}).then(res=>{
+							if(res.status){
+								res.data.push({"testPaperName":"不限",id:null})
+								this.paperData=res.data;
+							}else{
+								this.$message.error('初始化失败，请重联系老师或管理员');
+							}
+						}).catch(res=>{
+							this.$message.error('服务器错误');
+						})
+						this.change();
+
+			        },
+			        beforeMount() {
+			            //页面在内存中编辑完成，js内容尚未渲染到页面
+			            console.log("beforeMount");
+			        },
+			        mounted() {
+			            //内存中的模板已经挂载到页面中，页面渲染完成。
+			            console.log("mounted");
+			        }
+			    })
+		</script>
+
+	</body>
+</html>

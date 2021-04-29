@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<link rel="stylesheet" href="/Examination/assets/elem-ui/node_modules/element-ui/lib/theme-chalk/index.css"/>
+		<script src="/Examination/assets/vue/node_modules/vue/dist/vue.js"></script>
+		<script src="/Examination/assets/elem-ui/node_modules/element-ui/lib/index.js"></script>
+		<script src="/Examination/assets/axios/node_modules/axios/dist/axios.js"></script>
+		<script src="/Examination/js/ajax/api.js"></script>
+		<script src="/Examination/js/record.js"></script>
+		<script src="/Examination/js/jquery-3.4.1.js"></script>
+
+	</head>
+	<style>
+		.card {
+			margin: 100px auto;
+			width: 700px;
+			max-height: 800px;
+			border-radius: 20px;
+		}
+		.card table tr td{
+			text-align: center;
+		}
+		.card table tr th{
+			text-align: center;
+		}
+	</style>
+	
+	<body>
+		<div id="app">
+			<el-card class="box-card card">
+				<el-table
+						:data="testpaper"
+						v-loading="loading"
+						style="width: 1200px;"
+						max-height="800">
+					<el-table-column
+							fixed
+							prop="testPaperName"
+							label="试卷名">
+					</el-table-column>
+					<el-table-column
+							fixed
+							prop="startTime"
+							label="开始时间">
+					</el-table-column>
+					<el-table-column
+							fixed
+							prop="endTime"
+							label="结束时间">
+					</el-table-column>
+					<el-table-column
+							fixed
+							prop="timeLength"
+							width="80"
+							label="考试时长">
+
+					</el-table-column>
+
+					<el-table-column
+							fixed="right"
+							label="操作"
+							width="160">
+						<template slot-scope="scope">
+							<div>
+								<el-button
+										@click.native.prevent="exam(scope.row)"
+										type="text"
+										:disabled="scope.row.testFinishFlag!=0"
+										size="small">
+									开始考试
+								</el-button>
+
+								<el-button
+										@click.native.prevent="showAnswer(scope.row)"
+										type="text"
+										:disabled="scope.row.testFlag==0"
+										size="small">
+									查看试卷
+								</el-button>
+
+							</div>
+
+						</template>
+
+					</el-table-column>
+				</el-table>
+			</el-card>
+
+		</div>
+		<script>
+
+			 new Vue({
+			        el: '#app',
+			        data: {
+			            testpaper:[],
+						loading:true,
+
+			        },
+			        methods: {
+						showAnswer(res){
+
+			 			},
+						exam(row){
+							location.href="./exam.html?id="+row.testPaperID+"&timgLength="+row.timeLength;
+						},
+			        	loadData(){
+			        		api.get("/Student/api/Student/GetPaperPublish").then(res=>{
+			        			// console.log(res);
+			        			if(res.status){
+
+									$.each(res.data,function(i,item){
+										res.data[i].startTime=item.startTime.replace("T"," ")
+										res.data[i].endTime=item.endTime.replace("T"," ")
+										// console.log(i,item)
+									})
+									this.testpaper=res.data;
+									this.loading=false;
+								}else{
+			        				this.$message.error("数据加载出错")
+								}
+
+							}).catch(res=>{
+								console.log(res)
+								this.$message.error("服务器出错，请联系管理员或老师")
+							})
+						}
+
+			        },
+			        beforeCreate() {
+			            //第一个生命周期函数，实例未创建即执行，不能操作data与methods
+
+
+			        },
+			        created() {
+			            //最早能操作data与methods的方法
+						this.loadData();
+
+			        },
+			        beforeMount() {
+			            //页面在内存中编辑完成，js内容尚未渲染到页面
+			            console.log("beforeMount");
+			        },
+			        mounted() {
+			            //内存中的模板已经挂载到页面中，页面渲染完成。
+			            console.log("mounted");
+			        }
+			    })
+		</script>
+
+	</body>
+</html>

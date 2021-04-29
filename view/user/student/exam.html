@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="/Examination/assets/elem-ui/node_modules/element-ui/lib/theme-chalk/index.css"/>
+    <script src="/Examination/assets/vue/node_modules/vue/dist/vue.js"></script>
+    <script src="/Examination/assets/elem-ui/node_modules/element-ui/lib/index.js"></script>
+    <script src="/Examination/assets/axios/node_modules/axios/dist/axios.js"></script>
+    <script src="/Examination/js/ajax/api.js"></script>
+    <script src="/Examination/js/record.js"></script>
+    <script src="/Examination/js/jquery-3.4.1.js"></script>
+</head>
+<style>
+    @font-face {
+        font-family: LESLIE;
+        src: url('/Examination/font/YournameD7HomeHalf.ttf');
+
+    }
+
+    .timer {
+        font-family: LESLIE;
+        font-weight: bolder;
+        font-size: 25px;
+    }
+    .steps{
+        width: 800px;
+        margin: 50px auto;
+    }
+    .card {
+        margin: 50px auto;
+        width: 800px;
+        max-height: 800px;
+        border-radius: 20px;
+        clear: both;
+    }
+</style>
+
+<body>
+<div id="app">
+    <div>
+        <div class="timer" style=" float:right;margin-right: 50px"> {{min}}:{{seconde}}</div>
+        <div class="timer" style="margin-left: 100px;">开始时间: {{startTime}}</div>
+        <el-steps class="steps" :active="active" finish-status="success" align-center >
+            <el-step title="第一题" icon="el-icon-edit"></el-step>
+            <el-step title="第二题" icon="el-icon-edit"></el-step>
+            <el-step title="第三题" icon="el-icon-upload"></el-step>
+            <el-step title="第四题" icon="el-icon-upload"></el-step>
+        </el-steps>
+        <el-card class="box-card card">
+            <div v-if="active==0||active==1||active==2">
+                <b>请阅读下列文章回答第1、2小题，并朗读文章</b><br/>
+                {{question.testArticle}}
+            </div>
+            <div v-if="active==0">
+                <div>1.{{question.testQuestionOne}}</div>
+                <el-input type="textarea" placeholder="请输入你的答案" v-model="answer.answerOne"></el-input>
+            </div>
+            <div v-if="active==1">
+                2.{{question.testQuestionTow}}
+                <el-input type="textarea" placeholder="请输入你的答案" v-model="answer.answerTow"></el-input>
+            </div>
+            <div v-if="active==2" style="margin: 20px; text-align: center">
+                <div>请朗读此文章，并提交朗读文件</div>
+                <audio controls autoplay style="display: none"></audio>
+                <el-button icon="el-icon-microphone" :disabled="ismic" round @click="startRecording()" type="button" value="">录音</el-button>
+                <el-button icon="el-icon-video-pause " round @click="stopRecording()" type="button" value="停止">停止</el-button>
+                <el-button icon="el-icon-video-play" round @click="playRecording()" type="button" value="">播放</el-button>
+                <el-button icon="el-icon-finished" :disabled="ismic" round @click="uploadAudio('readAirtcle')" type="button" value="">提交</el-button>
+<!--                <el-button icon="el-icon-search" round @click="cancelAudio()" type="button" value="">取消</el-button>-->
+            </div>
+            <div v-if="active==3">
+                <div>根据以下要求选着合适的同学完成以下对话<br/>{{question.testSituationalDialogue}}</div>
+                <audio controls autoplay style="display: none"></audio>
+                <template>
+                    <el-select v-model="answer.StudentID" filterable placeholder="请选择">
+                        <el-option
+                                v-for="item in classData"
+                                :label="item.userName"
+                                :value="item.studentID">
+                        </el-option>
+                    </el-select>
+                </template>
+                <div   style="margin: 20px; text-align: center">
+                    <el-button icon="el-icon-microphone" :disabled="ismic" round @click="startRecording()" type="button" value="">录音</el-button>
+                    <el-button icon="el-icon-video-pause " round @click="stopRecording()" type="button" value="停止">停止</el-button>
+                    <el-button icon="el-icon-video-play" round @click="playRecording()" type="button" value="">播放</el-button>
+                    <el-button icon="el-icon-finished" :disabled="ismic" round @click="uploadAudio('dialogue')" type="button" value="">提交</el-button>
+                    <!--                <input @click="cancelAudio()" type="button" value="取消"/>-->
+                </div>
+
+            </div>
+
+            <el-button v-if="active!=3" style="float: right;margin: 20px;" @click="next">下一题</el-button>
+
+            <el-button v-if="active==3" style="float: right;margin: 20px;" @click="submit">提交</el-button>
+            <el-button v-if="active!=0" style="float: right;margin: 20px;" @click="prev">上一题</el-button>
+        </el-card>
+
+
+    </div>
+</div>
+<script>
+    // console.log(getUrlParam("id"));
+    var recorder;
+
+    // var audio = document.querySelector('audio:fa');
+    var vue = new Vue({
+        el: '#app',
+        data: {
+            ismic:false,
+            // hasrecord:false,
+            active: 0,
+            duration: 50,
+            min: "",
+            seconde: "",
+            startTime: "",
+            answer:{
+                ID:'',
+                testPaperID:'',
+                readAirtcleUrl:'',
+                answerOne:'',
+                answerTow:'',
+                dialogueUrl:'',
+                StudentID:''
+            },
+            question: {
+                testPaperName: "",
+                testArticle: "",
+                testQuestionOne: "",
+                testQuestionTow: "",
+                testSituationalDialogue: "",
+                answerID: null,
+                id: null
+            },
+            classData:[],
+
+        },
+        methods: {
+
+            submit(){
+                api.post("/Student/api/Student/SubAnswer",this.answer).then(res=>{
+
+                    if(res.status){
+                        this.$message.success("提交成功");
+                        setTimeout(location.href="./testpaper.html",1000)
+                    }else{
+                        this.$message.error('修改失败，请重新修改或联系老师');
+                    }
+                }).catch(res=>{
+                    this.$message.error('服务器错误');
+                })
+            },
+            next() {
+                if (this.active++ > 3) this.active = 0;
+            },
+            prev(){
+               this.active--;
+            },
+            startRecording() {
+                this.ismic=true;
+                HZRecorder.get(function (rec) {
+                    recorder = rec;
+                    recorder.start();
+                });
+            }, stopRecording() {
+                if(this.ismic){
+                    recorder.stop();
+                    this.ismic=false;
+                }
+
+
+                let audio =$('audio').get(0);
+                // console.log(!audio.paused)
+                if( !audio.paused) {
+                    audio.pause();
+                }
+            }, playRecording() {
+                $('audio').attr('src', window.URL.createObjectURL(recorder.getBlob()));
+                // recorder.play(audio);
+            }, cancelAudio() {
+                recorder.stop();
+                recorder.clear();
+            }, uploadAudio( res) {
+               if(recorder==null){
+                   this.$message.warning("请先录音");
+                   return;
+               }
+                recorder.upload(apiUrl + "Student/api/Student/UploadFile", function (state, e) {
+                    console.log(state, e);
+                    switch (state) {
+                        case 'uploading':
+                            // var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';
+                            break;
+                        case 'ok':
+                            // alert(e.target.responseText);
+                            let response=JSON.parse(e.target.responseText);
+                            console.log(response.status)
+                                if(response.status){
+                                    if(res=='readAirtcle'){
+                                        vue.answer.readAirtcleUrl=response.data;
+                                    }else{
+                                        vue.answer.dialogueUrl=response.data;
+                                    }
+                                    vue.$message.success(" 上传成功")
+                                }else{
+                                    vue.$message.warning("上传出现错误")
+                                }
+
+
+                            // alert("上传成功");
+                            break;
+                        case 'error':
+                            alert("上传失败");
+                            break;
+                        case 'cancel':
+                            alert("上传被取消");
+                            break;
+                    }
+                });
+            }, getUrlParam(name) {
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); //构造一个含有目标参数的正则表达式对象
+                var r = window.location.search.substr(1).match(reg);  //匹配目标参数
+                if (r != null) return unescape(r[2]);
+                return null; //返回参数值
+            },
+            showTime() {
+
+                return new Promise((resolve, reject) => {
+
+                    var timeing = new Date();
+                    var time = new Date();
+                    time.setTime(new Date(this.startTime).getTime() + this.duration * 60 * 1000);
+                    var num = time.getTime() - timeing.getTime();
+
+                    var day = parseInt(num / (24 * 60 * 60 * 1000));
+                    num = num % (24 * 60 * 60 * 1000);
+                    var hour = parseInt(num / (60 * 60 * 1000));
+                    num = num % (60 * 60 * 1000);
+                    var minute = parseInt(num / (60 * 1000));
+                    num = num % (60 * 1000);
+                    var seconde = parseInt(num / 1000);
+                    // console.log(day,hour,minute,seconde,show)
+                    resolve({day: day, hour: hour, minute: minute, seconde: seconde});
+
+
+                })
+                // setInterval(function(){
+                //
+                // },500)
+
+            }
+        },
+        beforeCreate() {
+            //第一个生命周期函数，实例未创建即执行，不能操作data与methods
+
+
+        },
+        created() {
+            this.$alert('考试期间请不要刷新浏览器，以免造成答案丢失', '警告', {
+                confirmButtonText: '确定',
+                callback: action => {
+                    this.$message({
+                        type: 'success',
+                        message: `开始考试`
+                    });
+                }
+            });
+            var today = new Date();
+            var year = today.getFullYear();
+            var month = today.getMonth() + 1 < 10 ? "0" + (today.getMonth() + 1)
+                : today.getMonth() + 1;
+            var day = today.getDate() < 10 ? "0" + today.getDate() : today
+                .getDate();
+            var h = today.getHours();
+            var m = today.getMinutes();
+            var s = today.getSeconds();
+            m = checkTime(m);
+            s = checkTime(s);
+            this.startTime = year + "-" + month + "-" + day + " " + h + ":" + m + ":" + s
+            // t=setTimeout('startTime()',500)
+            console.log(this.getUrlParam("timgLength"))
+            api.get("/Student/api/Student/GetPaper?PaperID=" + this.getUrlParam("id")).then(res => {
+                if (res.status) {
+                    this.question=res.data[0];
+                    this.answer.ID=res.data[0].answerID;
+                    this.answer.testPaperID=Number(this.getUrlParam("id"));
+                } else {
+                    this.$message.error("数据加载出错，请稍后重试")
+                }
+                console.log(res)
+            }).catch(res => {
+                this.$message.error("服务器出错，请联系管理员")
+            })
+
+            api.get("/Student/api/Student/GetStudent?ClassID=" + JSON.parse(localStorage.getItem("user")).classID).then(res => {
+                if (res.status) {
+                    this.classData=res.data;
+
+                } else {
+                    this.$message.error("数据加载出错，请稍后重试")
+                }
+                console.log(res)
+            }).catch(res => {
+                this.$message.error("服务器出错，请联系管理员")
+            })
+            this.duration=this.getUrlParam("timeLength");
+
+
+            function checkTime(i) {
+                if (i < 10) {
+                    i = "0" + i
+                }
+                return i
+            }
+
+            //最早能操作data与methods的方法
+
+            setInterval(function () {
+                vue.showTime().then(res => {
+                    vue.min = res.minute<10?"0"+res.minute:""+res.minute;
+                    vue.seconde = res.seconde<10?"0"+res.seconde:""+res.seconde;
+                })
+            }, 500)
+
+
+        },
+        beforeMount() {
+            //页面在内存中编辑完成，js内容尚未渲染到页面
+            console.log("beforeMount");
+        },
+        mounted() {
+            //内存中的模板已经挂载到页面中，页面渲染完成。
+            console.log("mounted");
+        }
+    })
+</script>
+<script>
+
+
+</script>
+</body>
+</html>
