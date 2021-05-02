@@ -277,7 +277,8 @@
 							api.post("/ManagerArea/api/Teacher/GetAnswer",{
 								classID:this.classId,
 								testPaperID:this.paperId,
-								id: null,testFlag:Number(this.testFlag),
+								id: null,
+								testFlag:Number(this.testFlag),
 								testFinishFlag:Number(this.testFinishFlag)}).then(res=>{
 
 								if(res.status){

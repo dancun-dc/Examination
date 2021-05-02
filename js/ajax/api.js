@@ -13,7 +13,7 @@ var projectName=pathName.substring(0,pathName.substr(1).indexOf('/')+1);
 
 document.write("<script src=\""+projectName+"/assets/axios/node_modules/axios/dist/axios.js\"></script>");
 // var apiUrl = 'http://39.102.36.211:1234/';
-var apiUrl = 'http://127.0.0.1:5000/';
+var apiUrl = 'http://localhost:5000/';
 
 
 let api = {

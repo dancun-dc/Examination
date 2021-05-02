@@ -77,7 +77,7 @@
 										type="text"
 										:disabled="scope.row.testFlag==0"
 										size="small">
-									查看试卷
+									查看成绩
 								</el-button>
 
 							</div>
@@ -87,6 +87,72 @@
 					</el-table-column>
 				</el-table>
 			</el-card>
+			<el-dialog
+					title="提示"
+					:visible.sync="dialogVisible"
+					width="700px">
+				<audio controls autoplay style="display: none"></audio>
+				<el-form  label-width="80px" :model="answerInfo">
+					<el-form-item label="第一题：">
+						{{answerInfo.answerOne}}
+					</el-form-item>
+					<el-form-item label="得分">
+						<el-rate
+								v-model="answerInfo.answerOneGrade"
+								disabled
+								style="padding-top: 13px;height: 40px;"
+								show-text>
+						</el-rate>
+
+						<!--						<el-input v-model="answerInfo.answerOneGrade"></el-input>-->
+					</el-form-item>
+					<el-form-item label="第二题：">
+						{{answerInfo.answerOne}}
+					</el-form-item>
+					<el-form-item label="得分">
+						<el-rate
+								v-model="answerInfo.answerTowGrade"
+								disabled
+								style="padding-top: 13px;height: 40px;"
+								show-text>
+						</el-rate>
+
+					</el-form-item>
+					<el-form-item label="阅读题：">
+
+						<el-button icon="el-icon-video-play" round @click="playRecording(answerInfo.readAirtcleUrl)" type="button" value="">播放</el-button>
+						<el-button icon="el-icon-video-pause " round @click="stopRecording()" type="button" value="停止">停止</el-button>
+
+					</el-form-item>
+					<el-form-item label="得分">
+						<el-rate
+								v-model="answerInfo.readAirtcleGrade"
+								disabled
+								style="padding-top: 13px;height: 40px;"
+								show-text>
+						</el-rate>
+
+					</el-form-item>
+					<el-form-item label="对话题：">
+
+						<el-button icon="el-icon-video-play" round @click="playRecording(answerInfo.dialogueUrl)" type="button" value="">播放</el-button>
+						<el-button icon="el-icon-video-pause " round @click="stopRecording()" type="button" value="停止">停止</el-button>
+
+					</el-form-item>
+					<el-form-item label="得分">
+						<el-rate
+								v-model="answerInfo.dialogueGrade"
+								disabled
+								style="padding-top: 13px;height: 40px;"
+								show-text>
+						</el-rate>
+
+					</el-form-item>
+
+
+				</el-form>
+
+			</el-dialog>
 
 		</div>
 		<script>
@@ -94,13 +160,49 @@
 			 new Vue({
 			        el: '#app',
 			        data: {
+						dialogVisible:false,
 			            testpaper:[],
 						loading:true,
+						answerInfo:{
+							"studentID":null,
+							"testPaperID":null,
+							"testPaperName":"",
+							"readAirtcleUrl":"",
+							"answerOne":"",
+							"answerTow":"",
+							"dialogueUrl":"",
+							"dialogueGrade":"",
+							"answerTowGrade":"",
+							"answerOneGrade":null,
+							"readAirtcleGrade":null,
+							"testFlag":null,
+							"testFinishFlag":null,
+							"userName":"",
+							"timeLength":null,
+							"id":null
+						},
 
 			        },
 			        methods: {
-						showAnswer(res){
+						showAnswer(row){
+							console.log(row.id);
+							api.post("/ManagerArea/api/Teacher/GetAnswer",{
+								classID:null,
+								testPaperID:null,
+								id: row.id,
+								testFlag:1,
+								testFinishFlag:1}).then(res=>{
 
+								if(res.status){
+									this.answerInfo=res.data[0];
+									this.dialogVisible=true;
+									console.log(res)
+								}else{
+									this.$message.error('初始化失败，请重联系老师或管理员');
+								}
+							}).catch(res=>{
+								this.$message.error('服务器错误');
+							})
 			 			},
 						exam(row){
 							location.href="./exam.html?id="+row.testPaperID+"&timgLength="+row.timeLength;
